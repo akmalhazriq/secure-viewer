@@ -7,14 +7,18 @@ export class ViewerCore {
         this.container = document.querySelector(config.selector);
         this.url = config.url;
         this.type = config.type || 'pdf'; 
-        this.blurOnUnfocus = config.blurOnUnfocus; // Capture the new option
         
         if (!this.container) throw new Error(`Container ${config.selector} not found.`);
 
         this.initUI();
         
-        // Pass the option to the security manager
-        new SecurityManager(this.container, { blurOnUnfocus: this.blurOnUnfocus });
+        // Pass all security configuration down to the manager
+        new SecurityManager(this.container, { 
+            blurOnUnfocus: config.blurOnUnfocus,
+            blockRightClick: config.blockRightClick,
+            blockDragging: config.blockDragging,
+            blockShortcuts: config.blockShortcuts
+        });
         
         this.loadContent();
     }
@@ -23,7 +27,6 @@ export class ViewerCore {
         this.container.style.position = 'relative';
         
         if (this.type === 'pdf') {
-            // PDF needs scrolling and hardcoded heights
             this.container.style.width = '100%';
             this.container.style.height = '100%';
             this.container.style.minHeight = '400px';
@@ -31,8 +34,6 @@ export class ViewerCore {
             this.container.style.backgroundColor = '#525659';
             this.container.style.padding = '20px';
         } else {
-            // IMAGE container just needs to hide overflow.
-            // The width/height will be determined by the user's CSS!
             this.container.style.overflow = 'hidden';
             this.container.style.display = 'flex';
             this.container.style.justifyContent = 'center';
