@@ -7,8 +7,8 @@
     <style>
         /* The user controls the size here, just like an <img> tag */
         .my-image-wrapper {
-            width: 400px;
-            height: 300px;
+            width: 100%;
+            height: auto;
         }
     </style>
 </head>
@@ -16,14 +16,18 @@
     <div id="secure-image" class="my-image-wrapper"></div>
 
     <script>
-        // Just pass a direct link to ANY normal PDF!
         new SecureViewer({
             selector: '#secure-image',
-            type: 'image', // 'pdf' or 'image'
-            url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b6/Image_created_with_a_mobile_phone.png/250px-Image_created_with_a_mobile_phone.png',
-            blurOnUnfocus: false, // Optional: Blur content when the window is not active
+            type: 'image', 
+            url: 'https://picsum.photos/1920/1080', 
+            
+            // Custom Security Toggles
+            blurOnUnfocus: false,    // No annoying blur
+            blockRightClick: false,  // Let users right click
+            blockDragging: false,    // Let users drag the canvas
+            blockShortcuts: false    // Don't block Ctrl+S
         });
-    </script>
+</script>
 
 </body>
 </html>

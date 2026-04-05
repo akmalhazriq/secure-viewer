@@ -4,6 +4,8 @@ import { ImageEngine } from './engines/ImageEngine';
 
 export class ViewerCore {
     constructor(config) {
+        // Save the whole config so we can pass it down later
+        this.config = config; 
         this.container = document.querySelector(config.selector);
         this.url = config.url;
         this.type = config.type || 'pdf'; 
@@ -12,7 +14,6 @@ export class ViewerCore {
 
         this.initUI();
         
-        // Pass all security configuration down to the manager
         new SecurityManager(this.container, { 
             blurOnUnfocus: config.blurOnUnfocus,
             blockRightClick: config.blockRightClick,
@@ -23,6 +24,7 @@ export class ViewerCore {
         this.loadContent();
     }
 
+    // ... (initUI stays exactly the same) ...
     initUI() {
         this.container.style.position = 'relative';
         
@@ -45,7 +47,8 @@ export class ViewerCore {
 
     async loadContent() {
         try {
-            const engine = this.type === 'pdf' ? new PdfEngine() : new ImageEngine();
+            // PASS THE CONFIG INTO THE ENGINES HERE
+            const engine = this.type === 'pdf' ? new PdfEngine(this.config) : new ImageEngine(this.config);
             this.container.innerHTML = ''; 
             await engine.render(this.container, this.url);
         } catch (error) {
