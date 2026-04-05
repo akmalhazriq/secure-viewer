@@ -4,19 +4,24 @@
     <title>Simple Secure Viewer</title>
     <!-- Load your compiled viewer script -->
     <script src="https://cdn.jsdelivr.net/gh/akmalhazriq/secure-viewer@main/lib/1.1.0/secure-viewer.min.js"></script>
+    <style>
+        /* The user controls the size here, just like an <img> tag */
+        .my-image-wrapper {
+            width: 400px;
+            height: 300px;
+        }
+    </style>
 </head>
 <body>
-
-    <h2>My Secure Document</h2>
-    <div id="simple-viewer" style="height: 600px; border: 1px solid #ccc;"></div>
+    <div id="secure-image" class="my-image-wrapper"></div>
 
     <script>
         // Just pass a direct link to ANY normal PDF!
         new SecureViewer({
-            selector: '#simple-viewer',
+            selector: '#secure-image',
             type: 'image', // 'pdf' or 'image'
-            // Notice this is just a normal, public PDF URL:
-            url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b6/Image_created_with_a_mobile_phone.png/250px-Image_created_with_a_mobile_phone.png' 
+            url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b6/Image_created_with_a_mobile_phone.png/250px-Image_created_with_a_mobile_phone.png',
+            blurOnUnfocus: false, // Optional: Blur content when the window is not active
         });
     </script>
 
