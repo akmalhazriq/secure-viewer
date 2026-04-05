@@ -3,7 +3,7 @@
 <head>
     <title>Simple Secure Viewer</title>
     <!-- Load your compiled viewer script -->
-    <script src="https://cdn.jsdelivr.net/gh/akmalhazriq/secure-viewer@main/dist/1.0.0/secure-viewer.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/akmalhazriq/secure-viewer@main/lib/1.1.0/secure-viewer.min.js"></script>
 </head>
 <body>
 
@@ -14,9 +14,9 @@
         // Just pass a direct link to ANY normal PDF!
         new SecureViewer({
             selector: '#simple-viewer',
-            type: 'pdf', 
+            type: 'image', // 'pdf' or 'image'
             // Notice this is just a normal, public PDF URL:
-            url: 'https://pdfobject.com/pdf/sample.pdf' 
+            url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b6/Image_created_with_a_mobile_phone.png/250px-Image_created_with_a_mobile_phone.png' 
         });
     </script>
 

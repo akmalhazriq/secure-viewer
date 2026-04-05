@@ -1,6 +1,8 @@
 export class SecurityManager {
-    constructor(container) {
+    constructor(container, options = {}) {
         this.container = container;
+        // Default to true for safety, but allow user to disable it
+        this.blurOnUnfocus = options.blurOnUnfocus !== false; 
         this.applyFriction();
     }
 
@@ -11,7 +13,7 @@ export class SecurityManager {
         // 2. Block Dragging
         this.container.addEventListener('dragstart', e => e.preventDefault());
 
-        // 3. Block Keyboard Shortcuts (Print, Save, Inspect)
+        // 3. Block Keyboard Shortcuts
         window.addEventListener('keydown', e => {
             if ((e.ctrlKey || e.metaKey) && ['p', 's', 'c', 'u', 'i'].includes(e.key.toLowerCase())) {
                 e.preventDefault();
@@ -19,14 +21,16 @@ export class SecurityManager {
             }
         });
 
-        // 4. Anti-Screen Recording (Blurs when window loses focus)
-        window.addEventListener('blur', () => {
-            this.container.style.filter = 'blur(10px)';
-            this.container.style.opacity = '0.5';
-        });
-        window.addEventListener('focus', () => {
-            this.container.style.filter = 'none';
-            this.container.style.opacity = '1';
-        });
+        // 4. Anti-Screen Recording (Conditional)
+        if (this.blurOnUnfocus) {
+            window.addEventListener('blur', () => {
+                this.container.style.filter = 'blur(10px)';
+                this.container.style.opacity = '0.5';
+            });
+            window.addEventListener('focus', () => {
+                this.container.style.filter = 'none';
+                this.container.style.opacity = '1';
+            });
+        }
     }
 }
