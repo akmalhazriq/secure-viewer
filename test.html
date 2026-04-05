@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple Secure Viewer</title>
+    <!-- Load your compiled viewer script -->
+    <script src="https://cdn.jsdelivr.net/gh/akmalhazriq/secure-viewer@main/dist/1.0.0/secure-viewer.min.js"></script>
+</head>
+<body>
+
+    <h2>My Secure Document</h2>
+    <div id="simple-viewer" style="height: 600px; border: 1px solid #ccc;"></div>
+
+    <script>
+        // Just pass a direct link to ANY normal PDF!
+        new SecureViewer({
+            selector: '#simple-viewer',
+            type: 'pdf', 
+            // Notice this is just a normal, public PDF URL:
+            url: 'https://pdfobject.com/pdf/sample.pdf' 
+        });
+    </script>
+
+</body>
+</html>
