@@ -84,11 +84,17 @@ export class PdfEngine {
         const renderContext = { canvasContext: ctx, viewport: viewport };
         await page.render(renderContext).promise;
 
-        // 3. Render the Text Layer (HTML Spans for Ctrl+F)
-        textLayerDiv.innerHTML = ''; // Clear old text if zooming
+        // 3. Render the Text Layer (HTML Spans)
+        textLayerDiv.innerHTML = ''; 
+        
+        // --- THE FIX: Apply exact dimensions and the CSS scale factor ---
+        textLayerDiv.style.width = cssWidth;
+        textLayerDiv.style.height = cssHeight;
+        textLayerDiv.style.setProperty('--scale-factor', viewport.scale);
+        // --------------------------------------------------------------
+
         const textContent = await page.getTextContent();
         
-        // Use the pdf.js TextLayerBuilder to map the text coordinates to the DOM
         window.pdfjsLib.renderTextLayer({
             textContentSource: textContent,
             container: textLayerDiv,
