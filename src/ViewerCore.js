@@ -4,7 +4,6 @@ import { ImageEngine } from './engines/ImageEngine';
 
 export class ViewerCore {
     constructor(config) {
-        // Save the whole config so we can pass it down later
         this.config = config; 
         this.container = document.querySelector(config.selector);
         this.url = config.url;
@@ -24,17 +23,17 @@ export class ViewerCore {
         this.loadContent();
     }
 
-    // ... (initUI stays exactly the same) ...
     initUI() {
         this.container.style.position = 'relative';
+        this.container.style.width = '100%';
+        this.container.style.height = '100%';
         
         if (this.type === 'pdf') {
-            this.container.style.width = '100%';
-            this.container.style.height = '100%';
-            this.container.style.minHeight = '400px';
-            this.container.style.overflowY = 'auto';
-            this.container.style.backgroundColor = '#525659';
-            this.container.style.padding = '20px';
+            // Setup for a vertical stack (Toolbar on top, PDF below)
+            this.container.style.minHeight = '500px';
+            this.container.style.display = 'flex';
+            this.container.style.flexDirection = 'column';
+            this.container.style.overflow = 'hidden'; 
         } else {
             this.container.style.overflow = 'hidden';
             this.container.style.display = 'flex';
@@ -47,7 +46,6 @@ export class ViewerCore {
 
     async loadContent() {
         try {
-            // PASS THE CONFIG INTO THE ENGINES HERE
             const engine = this.type === 'pdf' ? new PdfEngine(this.config) : new ImageEngine(this.config);
             this.container.innerHTML = ''; 
             await engine.render(this.container, this.url);
