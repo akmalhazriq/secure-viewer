@@ -91,10 +91,13 @@ export class PdfEngine {
         textLayerDiv.style.height = cssHeight;
         textLayerDiv.style.setProperty('--scale-factor', viewport.scale);
         
-        // --- THE NEW SECURITY RULES ---
-        textLayerDiv.style.opacity = '0.0'; // Make it completely invisible
+        // --- THE FIXED SECURITY RULES ---
+        // DO NOT use opacity: 0! It hides the browser's search highlight.
+        // Instead, we make the text color transparent.
+        textLayerDiv.style.color = 'transparent'; 
+        
         textLayerDiv.style.userSelect = 'none'; // Blocks highlighting and copying
-        textLayerDiv.style.pointerEvents = 'none'; // Stops the mouse cursor from interacting with it
+        textLayerDiv.style.pointerEvents = 'none'; // Stops the mouse cursor
         textLayerDiv.style.webkitUserSelect = 'none'; // Safari support
         // ------------------------------
 
