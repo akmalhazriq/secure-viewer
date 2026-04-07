@@ -87,11 +87,16 @@ export class PdfEngine {
         // 3. Render the Text Layer (HTML Spans)
         textLayerDiv.innerHTML = ''; 
         
-        // --- THE FIX: Apply exact dimensions and the CSS scale factor ---
         textLayerDiv.style.width = cssWidth;
         textLayerDiv.style.height = cssHeight;
         textLayerDiv.style.setProperty('--scale-factor', viewport.scale);
-        // --------------------------------------------------------------
+        
+        // --- THE NEW SECURITY RULES ---
+        textLayerDiv.style.opacity = '0.0'; // Make it completely invisible
+        textLayerDiv.style.userSelect = 'none'; // Blocks highlighting and copying
+        textLayerDiv.style.pointerEvents = 'none'; // Stops the mouse cursor from interacting with it
+        textLayerDiv.style.webkitUserSelect = 'none'; // Safari support
+        // ------------------------------
 
         const textContent = await page.getTextContent();
         

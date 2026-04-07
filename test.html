@@ -3,7 +3,7 @@
 <head>
     <title>Simple Secure Viewer</title>
     <!-- Load your compiled viewer script -->
-    <script src="https://cdn.jsdelivr.net/gh/akmalhazriq/secure-viewer@main/lib/1.3.1/secure-viewer.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/akmalhazriq/secure-viewer@main/lib/1.3.2/secure-viewer.min.js"></script>
     <style>
         /* The user controls the size here, just like an <img> tag */
         .my-image-wrapper {
@@ -25,9 +25,9 @@
             
             // Custom Security Toggles
             blurOnUnfocus: false,    // No annoying blur
-            blockRightClick: false,  // Let users right click
-            blockDragging: false,    // Let users drag the canvas
-            blockShortcuts: false    // Don't block Ctrl+S
+            blockRightClick: true,  // Let users right click
+            blockDragging: true,    // Let users drag the canvas
+            blockShortcuts: true    // Don't block Ctrl+S
         });
     </script>
 </body>
