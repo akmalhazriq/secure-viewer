@@ -1,64 +1,100 @@
 export class PdfEngine {
     constructor(config) {
         this.config = config || {};
-        this.scale = 1.5; // Default zoom scale
-        this.canvases = []; // Keep track of canvases so we can zoom them later
+        this.scale = 1.5; 
+        this.canvases = []; 
     }
 
     async render(container, url) {
         await this.loadPdfJs();
 
-        // Check settings: Default headless to TRUE if not specified
         const isHeadless = this.config.headless !== false; 
-        
-        // If they turned off shortcut blocking, we allow downloading!
         const allowActions = this.config.blockShortcuts === false;
 
-        // 1. Create the Toolbar (if not headless)
         if (!isHeadless) {
             const toolbar = this.createToolbar(url, allowActions);
             container.appendChild(toolbar);
         }
 
-        // 2. Create the scrolling Document Area
         const viewerArea = document.createElement('div');
         viewerArea.style.width = '100%';
-        viewerArea.style.flexGrow = '1'; // Takes up remaining space below toolbar
+        viewerArea.style.flexGrow = '1'; 
         viewerArea.style.overflowY = 'auto';
         viewerArea.style.backgroundColor = '#525659';
         viewerArea.style.padding = '20px';
         container.appendChild(viewerArea);
 
-        // 3. Load and Render the PDF
         const loadingTask = window.pdfjsLib.getDocument(url);
         this.pdf = await loadingTask.promise;
 
         for (let pageNum = 1; pageNum <= this.pdf.numPages; pageNum++) {
             const page = await this.pdf.getPage(pageNum);
+            
+            // --- NEW: Create a wrapper for the Canvas AND the Text Layer ---
+            const pageWrapper = document.createElement('div');
+            pageWrapper.style.position = 'relative';
+            pageWrapper.style.margin = '0 auto 20px auto';
+            // The wrapper size will be set inside renderPage()
+            
             const canvas = document.createElement('canvas');
+            pageWrapper.appendChild(canvas);
             
-            this.canvases.push({ page, canvas });
-            viewerArea.appendChild(canvas);
+            // --- NEW: Create the Text Layer container ---
+            const textLayerDiv = document.createElement('div');
+            textLayerDiv.className = 'textLayer'; // pdf.js looks for this class
+            textLayerDiv.style.position = 'absolute';
+            textLayerDiv.style.top = '0';
+            textLayerDiv.style.left = '0';
+            textLayerDiv.style.right = '0';
+            textLayerDiv.style.bottom = '0';
+            textLayerDiv.style.overflow = 'hidden';
+            // Make the text transparent so we only see the canvas below it!
+            textLayerDiv.style.opacity = '0.2'; // Set to 0.2 while testing so you can see it working, set to 0.0 for production
+            textLayerDiv.style.lineHeight = '1.0';
             
-            this.renderPage(page, canvas);
+            pageWrapper.appendChild(textLayerDiv);
+            viewerArea.appendChild(pageWrapper);
+            
+            this.canvases.push({ page, canvas, textLayerDiv, pageWrapper });
+            
+            await this.renderPage(page, canvas, textLayerDiv, pageWrapper);
         }
     }
 
-    renderPage(page, canvas) {
+    async renderPage(page, canvas, textLayerDiv, pageWrapper) {
         const viewport = page.getViewport({ scale: this.scale });
         const ctx = canvas.getContext('2d');
         
+        // 1. Size everything to match the viewport exactly
+        const cssWidth = `${viewport.width}px`;
+        const cssHeight = `${viewport.height}px`;
+        
+        pageWrapper.style.width = cssWidth;
+        pageWrapper.style.height = cssHeight;
+        
         canvas.height = viewport.height;
         canvas.width = viewport.width;
-        
         canvas.style.width = '100%';
-        canvas.style.maxWidth = `${viewport.width}px`;
-        canvas.style.margin = '0 auto 20px auto';
+        canvas.style.height = '100%';
         canvas.style.display = 'block';
         canvas.style.boxShadow = '0 4px 12px rgba(0,0,0,0.2)';
         canvas.style.backgroundColor = 'white';
 
-        page.render({ canvasContext: ctx, viewport: viewport });
+        // 2. Render the Canvas (Pixels)
+        const renderContext = { canvasContext: ctx, viewport: viewport };
+        await page.render(renderContext).promise;
+
+        // 3. Render the Text Layer (HTML Spans for Ctrl+F)
+        textLayerDiv.innerHTML = ''; // Clear old text if zooming
+        const textContent = await page.getTextContent();
+        
+        // Use the pdf.js TextLayerBuilder to map the text coordinates to the DOM
+        window.pdfjsLib.renderTextLayer({
+            textContentSource: textContent,
+            container: textLayerDiv,
+            viewport: viewport,
+            textDivs: []
+        });
     }
 
     createToolbar(url, allowActions) {
@@ -125,18 +161,23 @@ export class PdfEngine {
     }
 
     zoom(delta) {
-        // Prevent zooming too far in or out
         this.scale = Math.max(0.5, Math.min(3.0, this.scale + delta));
         
-        // Re-render all canvases at the new scale
-        this.canvases.forEach(({ page, canvas }) => {
-            this.renderPage(page, canvas);
+        this.canvases.forEach(({ page, canvas, textLayerDiv, pageWrapper }) => {
+            this.renderPage(page, canvas, textLayerDiv, pageWrapper);
         });
     }
 
     loadPdfJs() {
         return new Promise((resolve) => {
             if (window.pdfjsLib) return resolve();
+            
+            // We need to load the main library AND the CSS file for the text layer
+            const css = document.createElement('link');
+            css.rel = 'stylesheet';
+            css.href = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf_viewer.min.css';
+            document.head.appendChild(css);
+            
             const script = document.createElement('script');
             script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
             script.onload = () => {
