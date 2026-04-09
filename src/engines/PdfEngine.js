@@ -3,6 +3,7 @@ export class PdfEngine {
         this.config = config || {};
         this.scale = 1.5; 
         this.canvases = []; 
+        this.thumbnails = {};
     }
 
     async render(container, url) {
@@ -20,7 +21,8 @@ export class PdfEngine {
         const bodyWrap = document.createElement('div');
         bodyWrap.style.display = 'flex';
         bodyWrap.style.flexDirection = 'row';
-        bodyWrap.style.flexGrow = '1';
+        bodyWrap.style.flex = '1 1 0'; // Crucial: Allows it to shrink and grow inside container
+        bodyWrap.style.minHeight = '0'; // Crucial: Prevents infinite stretching
         bodyWrap.style.overflow = 'hidden';
         bodyWrap.style.width = '100%';
         container.appendChild(bodyWrap);
@@ -29,26 +31,33 @@ export class PdfEngine {
         if (showSidebar && !isHeadless) {
             sidebarDiv = document.createElement('div');
             sidebarDiv.style.width = '200px';
-            sidebarDiv.style.backgroundColor = '#2b2b2b'; // Slightly darker than main background
+            sidebarDiv.style.backgroundColor = '#2b2b2b'; 
             sidebarDiv.style.borderRight = '1px solid #111';
-            sidebarDiv.style.overflowY = 'auto';
+            sidebarDiv.style.overflowY = 'auto'; // Independent Scrollbar
             sidebarDiv.style.flexShrink = '0';
             sidebarDiv.style.padding = '10px 0';
-            
-            // Custom scrollbar styling for a sleek look
             sidebarDiv.style.scrollbarWidth = 'thin';
             sidebarDiv.style.scrollbarColor = '#666 #2b2b2b';
-            
             bodyWrap.appendChild(sidebarDiv);
         }
 
         const viewerArea = document.createElement('div');
         viewerArea.style.flexGrow = '1'; 
-        viewerArea.style.overflowY = 'auto';
+        viewerArea.style.overflowY = 'auto'; // Independent Scrollbar
         viewerArea.style.backgroundColor = '#525659';
         viewerArea.style.padding = '20px';
-        viewerArea.style.position = 'relative'; // Required for accurate scroll calculations
+        viewerArea.style.position = 'relative'; 
         bodyWrap.appendChild(viewerArea);
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                // If the page is at least 40% visible on screen
+                if (entry.isIntersecting) {
+                    const activePageNum = parseInt(entry.target.dataset.pageNumber);
+                    this.setActiveThumbnail(activePageNum);
+                }
+            });
+        }, { root: viewerArea, threshold: 0.4 });
 
         const loadingTask = window.pdfjsLib.getDocument(url);
         this.pdf = await loadingTask.promise;
@@ -60,7 +69,9 @@ export class PdfEngine {
             const pageWrapper = document.createElement('div');
             pageWrapper.style.position = 'relative';
             pageWrapper.style.margin = '0 auto 20px auto';
-            // The wrapper size will be set inside renderPage()
+            pageWrapper.dataset.pageNumber = pageNum;
+            
+            observer.observe(pageWrapper);
             
             const canvas = document.createElement('canvas');
             pageWrapper.appendChild(canvas);
@@ -89,6 +100,8 @@ export class PdfEngine {
                 await this.renderThumbnail(page, pageNum, sidebarDiv, viewerArea, pageWrapper);
             }
         }
+
+        if (showSidebar) this.setActiveThumbnail(1);
     }
 
     async renderPage(page, canvas, textLayerDiv, pageWrapper) {
@@ -142,21 +155,31 @@ export class PdfEngine {
     }
 
     async renderThumbnail(page, pageNum, sidebarDiv, viewerArea, targetPageWrapper) {
-        // Create a tiny viewport (20% of original size)
         const viewport = page.getViewport({ scale: 0.2 }); 
         
         const thumbContainer = document.createElement('div');
         thumbContainer.style.padding = '10px 20px';
+        thumbContainer.style.margin = '0 10px 10px 10px';
         thumbContainer.style.textAlign = 'center';
         thumbContainer.style.color = '#fff';
         thumbContainer.style.fontFamily = 'sans-serif';
         thumbContainer.style.fontSize = '12px';
         thumbContainer.style.cursor = 'pointer';
-        thumbContainer.style.transition = 'background-color 0.2s';
+        // NEW: Border properties for the active blue outline
+        thumbContainer.style.border = '2px solid transparent'; 
+        thumbContainer.style.borderRadius = '6px';
+        thumbContainer.style.transition = 'all 0.2s ease-in-out';
         
-        // Hover effect
-        thumbContainer.onmouseover = () => thumbContainer.style.backgroundColor = '#3c3c3c';
-        thumbContainer.onmouseout = () => thumbContainer.style.backgroundColor = 'transparent';
+        thumbContainer.onmouseover = () => {
+            if (thumbContainer.style.borderColor === 'transparent') {
+                thumbContainer.style.backgroundColor = '#3c3c3c';
+            }
+        };
+        thumbContainer.onmouseout = () => {
+            if (thumbContainer.style.borderColor === 'transparent') {
+                thumbContainer.style.backgroundColor = 'transparent';
+            }
+        };
 
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
@@ -164,19 +187,18 @@ export class PdfEngine {
         canvas.height = viewport.height;
         canvas.width = viewport.width;
         canvas.style.width = '100%';
-        canvas.style.maxWidth = '120px'; // Keep it tidy
+        canvas.style.maxWidth = '120px'; 
         canvas.style.marginBottom = '8px';
         canvas.style.border = '1px solid #000';
         canvas.style.boxShadow = '0 2px 4px rgba(0,0,0,0.5)';
         canvas.style.backgroundColor = 'white';
 
-        // Render the tiny pixel version
         await page.render({ canvasContext: ctx, viewport: viewport }).promise;
 
-        // --- CLICK TO SCROLL MAGIC ---
+        // Click to scroll
         thumbContainer.onclick = () => {
+            this.setActiveThumbnail(pageNum); // Instantly set active state
             viewerArea.scrollTo({
-                // Calculate exact distance from top of viewer to the requested page
                 top: targetPageWrapper.offsetTop - viewerArea.offsetTop,
                 behavior: 'smooth'
             });
@@ -186,6 +208,28 @@ export class PdfEngine {
         thumbContainer.appendChild(document.createTextNode(`${pageNum}`));
         
         sidebarDiv.appendChild(thumbContainer);
+        
+        // NEW: Save it to our dictionary so the observer can find it later
+        this.thumbnails[pageNum] = thumbContainer; 
+    }
+
+    // --- NEW: The method that handles the blue outline ---
+    setActiveThumbnail(activePageNum) {
+        Object.keys(this.thumbnails).forEach(key => {
+            const thumb = this.thumbnails[key];
+            if (parseInt(key) === activePageNum) {
+                // Turn on the blue outline
+                thumb.style.borderColor = '#007bff';
+                thumb.style.backgroundColor = '#3c3c3c';
+                
+                // Auto-scroll the sidebar so the active thumbnail is always visible!
+                thumb.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            } else {
+                // Turn off the blue outline
+                thumb.style.borderColor = 'transparent';
+                thumb.style.backgroundColor = 'transparent';
+            }
+        });
     }
 
     createToolbar(url, allowActions) {
