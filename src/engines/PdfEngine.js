@@ -292,7 +292,72 @@ export class PdfEngine {
             bar.appendChild(printBtn);
         }
 
+        const searchContainer = document.createElement('div');
+        searchContainer.style.marginLeft = 'auto'; // Pushes it to the far right
+        searchContainer.style.display = 'flex';
+        searchContainer.style.alignItems = 'center';
+
+        const searchInput = document.createElement('input');
+        searchInput.type = 'text';
+        searchInput.placeholder = 'Search...';
+        searchInput.style.cssText = "padding: 6px 10px; border-radius: 4px; border: none; outline: none; width: 200px; background: #1e1e1e; color: white;";
+        
+        // Trigger search as the user types
+        searchInput.oninput = (e) => this.performSearch(e.target.value);
+
+        searchContainer.appendChild(searchInput);
+        bar.appendChild(searchContainer);
+
+        // --- NEW: HIJACK NATIVE CTRL+F ---
+        window.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') {
+                e.preventDefault(); // Stop the browser's default search popup
+                searchInput.focus(); // Focus our custom search bar instead!
+            }
+        });
+
         return bar;
+    }
+
+    performSearch(query) {
+        const searchTerm = query.toLowerCase().trim();
+
+        // Loop through every page's text layer
+        this.canvases.forEach(({ textLayerDiv }) => {
+            // Get all the individual text spans pdf.js created
+            const spans = textLayerDiv.querySelectorAll('span');
+
+            spans.forEach(span => {
+                // Save the original raw text the first time we touch the span
+                if (span.dataset.originalText === undefined) {
+                    span.dataset.originalText = span.textContent;
+                }
+
+                const originalText = span.dataset.originalText;
+
+                // If search is empty, just reset the text to normal
+                if (!searchTerm) {
+                    span.innerHTML = originalText;
+                    return;
+                }
+
+                // If we find a match, wrap the exact word in a yellow highlight
+                if (originalText.toLowerCase().includes(searchTerm)) {
+                    // Use regex to find the word while keeping original casing
+                    const regex = new RegExp(`(${searchTerm})`, 'gi');
+                    
+                    // Notice the style: yellow background, but transparent text so the canvas shows through!
+                    const highlightedHTML = originalText.replace(
+                        regex, 
+                        '<mark style="background-color: rgba(255, 255, 0, 0.5); color: transparent; border-radius: 2px;">$1</mark>'
+                    );
+                    span.innerHTML = highlightedHTML;
+                } else {
+                    // Reset if it doesn't match the new query
+                    span.innerHTML = originalText;
+                }
+            });
+        });
     }
 
     zoom(delta) {
