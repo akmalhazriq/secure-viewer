@@ -3,7 +3,7 @@
 <head>
     <title>Simple Secure Viewer</title>
     <!-- Load your compiled viewer script -->
-    <script src="https://cdn.jsdelivr.net/gh/akmalhazriq/secure-viewer@main/lib/1.3.4/secure-viewer.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/akmalhazriq/secure-viewer@main/lib/1.3.6/secure-viewer.min.js"></script>
     <style>
         body {
             margin: 0;
@@ -28,7 +28,9 @@
             url: 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf',
 
             headless: false,
-            
+            sidebar: true,
+            searchable: true,
+
             // Custom Security Toggles
             blurOnUnfocus: false,    // No annoying blur
             blockRightClick: false,  // Let users right click

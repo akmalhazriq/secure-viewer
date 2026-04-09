@@ -10,19 +10,45 @@ export class PdfEngine {
 
         const isHeadless = this.config.headless !== false; 
         const allowActions = this.config.blockShortcuts === false;
+        const showSidebar = this.config.sidebar === true;
 
         if (!isHeadless) {
             const toolbar = this.createToolbar(url, allowActions);
             container.appendChild(toolbar);
         }
 
+        const bodyWrap = document.createElement('div');
+        bodyWrap.style.display = 'flex';
+        bodyWrap.style.flexDirection = 'row';
+        bodyWrap.style.flexGrow = '1';
+        bodyWrap.style.overflow = 'hidden';
+        bodyWrap.style.width = '100%';
+        container.appendChild(bodyWrap);
+
+        let sidebarDiv = null;
+        if (showSidebar && !isHeadless) {
+            sidebarDiv = document.createElement('div');
+            sidebarDiv.style.width = '200px';
+            sidebarDiv.style.backgroundColor = '#2b2b2b'; // Slightly darker than main background
+            sidebarDiv.style.borderRight = '1px solid #111';
+            sidebarDiv.style.overflowY = 'auto';
+            sidebarDiv.style.flexShrink = '0';
+            sidebarDiv.style.padding = '10px 0';
+            
+            // Custom scrollbar styling for a sleek look
+            sidebarDiv.style.scrollbarWidth = 'thin';
+            sidebarDiv.style.scrollbarColor = '#666 #2b2b2b';
+            
+            bodyWrap.appendChild(sidebarDiv);
+        }
+
         const viewerArea = document.createElement('div');
-        viewerArea.style.width = '100%';
         viewerArea.style.flexGrow = '1'; 
         viewerArea.style.overflowY = 'auto';
         viewerArea.style.backgroundColor = '#525659';
         viewerArea.style.padding = '20px';
-        container.appendChild(viewerArea);
+        viewerArea.style.position = 'relative'; // Required for accurate scroll calculations
+        bodyWrap.appendChild(viewerArea);
 
         const loadingTask = window.pdfjsLib.getDocument(url);
         this.pdf = await loadingTask.promise;
@@ -58,6 +84,10 @@ export class PdfEngine {
             this.canvases.push({ page, canvas, textLayerDiv, pageWrapper });
             
             await this.renderPage(page, canvas, textLayerDiv, pageWrapper);
+
+            if (sidebarDiv) {
+                await this.renderThumbnail(page, pageNum, sidebarDiv, viewerArea, pageWrapper);
+            }
         }
     }
 
@@ -109,6 +139,53 @@ export class PdfEngine {
             // If searchable is false, ensure the text layer is completely hidden and empty
             textLayerDiv.style.display = 'none';
         }
+    }
+
+    async renderThumbnail(page, pageNum, sidebarDiv, viewerArea, targetPageWrapper) {
+        // Create a tiny viewport (20% of original size)
+        const viewport = page.getViewport({ scale: 0.2 }); 
+        
+        const thumbContainer = document.createElement('div');
+        thumbContainer.style.padding = '10px 20px';
+        thumbContainer.style.textAlign = 'center';
+        thumbContainer.style.color = '#fff';
+        thumbContainer.style.fontFamily = 'sans-serif';
+        thumbContainer.style.fontSize = '12px';
+        thumbContainer.style.cursor = 'pointer';
+        thumbContainer.style.transition = 'background-color 0.2s';
+        
+        // Hover effect
+        thumbContainer.onmouseover = () => thumbContainer.style.backgroundColor = '#3c3c3c';
+        thumbContainer.onmouseout = () => thumbContainer.style.backgroundColor = 'transparent';
+
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+        canvas.style.width = '100%';
+        canvas.style.maxWidth = '120px'; // Keep it tidy
+        canvas.style.marginBottom = '8px';
+        canvas.style.border = '1px solid #000';
+        canvas.style.boxShadow = '0 2px 4px rgba(0,0,0,0.5)';
+        canvas.style.backgroundColor = 'white';
+
+        // Render the tiny pixel version
+        await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+
+        // --- CLICK TO SCROLL MAGIC ---
+        thumbContainer.onclick = () => {
+            viewerArea.scrollTo({
+                // Calculate exact distance from top of viewer to the requested page
+                top: targetPageWrapper.offsetTop - viewerArea.offsetTop,
+                behavior: 'smooth'
+            });
+        };
+
+        thumbContainer.appendChild(canvas);
+        thumbContainer.appendChild(document.createTextNode(`${pageNum}`));
+        
+        sidebarDiv.appendChild(thumbContainer);
     }
 
     createToolbar(url, allowActions) {
