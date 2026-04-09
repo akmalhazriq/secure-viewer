@@ -9,6 +9,10 @@ export class ViewerCore {
         this.url = config.url;
         this.type = config.type || 'pdf'; 
         
+        if (this.config.searchable === undefined) {
+            this.config.searchable = false; 
+        }
+
         if (!this.container) throw new Error(`Container ${config.selector} not found.`);
 
         this.initUI();

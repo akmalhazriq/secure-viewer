@@ -85,30 +85,30 @@ export class PdfEngine {
         await page.render(renderContext).promise;
 
         // 3. Render the Text Layer (HTML Spans)
-        textLayerDiv.innerHTML = ''; 
-        
-        textLayerDiv.style.width = cssWidth;
-        textLayerDiv.style.height = cssHeight;
-        textLayerDiv.style.setProperty('--scale-factor', viewport.scale);
-        
-        // --- THE FIXED SECURITY RULES ---
-        // DO NOT use opacity: 0! It hides the browser's search highlight.
-        // Instead, we make the text color transparent.
-        textLayerDiv.style.color = 'transparent'; 
-        
-        textLayerDiv.style.userSelect = 'none'; // Blocks highlighting and copying
-        textLayerDiv.style.pointerEvents = 'none'; // Stops the mouse cursor
-        textLayerDiv.style.webkitUserSelect = 'none'; // Safari support
-        // ------------------------------
+        if (this.config.searchable) {
+            textLayerDiv.innerHTML = ''; 
+            
+            textLayerDiv.style.width = cssWidth;
+            textLayerDiv.style.height = cssHeight;
+            textLayerDiv.style.setProperty('--scale-factor', viewport.scale);
+            
+            textLayerDiv.style.color = 'transparent'; 
+            textLayerDiv.style.userSelect = 'none'; 
+            textLayerDiv.style.pointerEvents = 'none'; 
+            textLayerDiv.style.webkitUserSelect = 'none'; 
 
-        const textContent = await page.getTextContent();
-        
-        window.pdfjsLib.renderTextLayer({
-            textContentSource: textContent,
-            container: textLayerDiv,
-            viewport: viewport,
-            textDivs: []
-        });
+            const textContent = await page.getTextContent();
+            
+            window.pdfjsLib.renderTextLayer({
+                textContentSource: textContent,
+                container: textLayerDiv,
+                viewport: viewport,
+                textDivs: []
+            });
+        } else {
+            // If searchable is false, ensure the text layer is completely hidden and empty
+            textLayerDiv.style.display = 'none';
+        }
     }
 
     createToolbar(url, allowActions) {
