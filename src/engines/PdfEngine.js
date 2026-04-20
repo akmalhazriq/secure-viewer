@@ -244,6 +244,8 @@ export class PdfEngine {
         bar.style.fontFamily = 'sans-serif';
         bar.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
         bar.style.zIndex = '10';
+        bar.style.paddingLeft = '20px';
+        bar.style.paddingRight = '20px';
 
         // --- ZOOM CONTROLS ---
         const btnStyle = "padding: 6px 12px; cursor: pointer; border: none; border-radius: 4px; background: #525659; color: white; font-weight: bold;";
@@ -349,7 +351,7 @@ export class PdfEngine {
                     // Notice the style: yellow background, but transparent text so the canvas shows through!
                     const highlightedHTML = originalText.replace(
                         regex, 
-                        '<mark style="background-color: rgba(255, 255, 0, 0.5); color: transparent; border-radius: 2px;">$1</mark>'
+                        '<mark style="background-color: rgba(255, 255, 0, 0.7); color: transparent; border-radius: 2px;">$1</mark>'
                     );
                     span.innerHTML = highlightedHTML;
                 } else {
