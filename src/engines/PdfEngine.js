@@ -156,6 +156,17 @@ export class PdfEngine {
         const renderContext = { canvasContext: ctx, viewport: viewport };
         await page.render(renderContext).promise;
 
+        if (this.config.watermark) {
+            const wmOpts = this.config.watermarkOptions || {};
+            const wmType = wmOpts.type || 'merged'; // 'merged' or 'layer'
+
+            if (wmType === 'merged') {
+                await this.drawMergedWatermark(ctx, viewport.width, viewport.height, wmOpts);
+            } else if (wmType === 'layer') {
+                this.createLayerWatermark(pageWrapper, wmOpts);
+            }
+        }
+
         if (this.config.searchable) {
             textLayerDiv.innerHTML = ''; 
             
@@ -179,6 +190,102 @@ export class PdfEngine {
         } else {
             textLayerDiv.style.display = 'none';
         }
+    }
+
+    async drawMergedWatermark(ctx, width, height, opts) {
+        ctx.save();
+        // Move to center and rotate 45 degrees
+        ctx.translate(width / 2, height / 2);
+        ctx.rotate(-Math.PI / 4); 
+        ctx.textAlign = 'center';
+        ctx.globalAlpha = 0.15; // Set opacity so we can read the text underneath
+
+        let currentY = 0;
+
+        // 1. Draw Image
+        if (opts.image) {
+            try {
+                const img = await this.loadImage(opts.image);
+                const imgWidth = 150; 
+                const imgHeight = (img.height / img.width) * imgWidth;
+                ctx.drawImage(img, -imgWidth / 2, currentY - imgHeight, imgWidth, imgHeight);
+                currentY += 40; 
+            } catch (e) {
+                console.warn("Failed to load watermark image for Canvas");
+            }
+        }
+
+        // 2. Draw Header (Defaults to 'CONFIDENTIAL')
+        const header = opts.header || 'CONFIDENTIAL';
+        ctx.font = 'bold 80px sans-serif';
+        ctx.fillStyle = 'black'; 
+        ctx.fillText(header, 0, currentY);
+        currentY += 60;
+
+        // 3. Draw Paragraph
+        if (opts.paragraph) {
+            ctx.font = '30px sans-serif';
+            ctx.fillText(opts.paragraph, 0, currentY);
+        }
+
+        ctx.restore();
+    }
+
+    createLayerWatermark(wrapper, opts) {
+        const wm = document.createElement('div');
+        wm.style.position = 'absolute';
+        wm.style.top = '0';
+        wm.style.left = '0';
+        wm.style.width = '100%';
+        wm.style.height = '100%';
+        wm.style.pointerEvents = 'none'; // CRUCIAL: Allows clicking/selecting text through it
+        wm.style.zIndex = '50';
+        wm.style.display = 'flex';
+        wm.style.flexDirection = 'column';
+        wm.style.alignItems = 'center';
+        wm.style.justifyContent = 'center';
+        wm.style.opacity = '0.15';
+        wm.style.overflow = 'hidden';
+
+        const inner = document.createElement('div');
+        inner.style.transform = 'rotate(-45deg)';
+        inner.style.textAlign = 'center';
+
+        if (opts.image) {
+            const img = document.createElement('img');
+            img.src = opts.image;
+            img.style.maxWidth = '150px';
+            img.style.marginBottom = '20px';
+            inner.appendChild(img);
+        }
+
+        const header = document.createElement('div');
+        header.innerText = opts.header || 'CONFIDENTIAL';
+        header.style.fontSize = '80px';
+        header.style.fontWeight = 'bold';
+        header.style.color = 'black';
+        inner.appendChild(header);
+
+        if (opts.paragraph) {
+            const para = document.createElement('div');
+            para.innerText = opts.paragraph;
+            para.style.fontSize = '30px';
+            para.style.color = 'black';
+            para.style.marginTop = '10px';
+            inner.appendChild(para);
+        }
+
+        wm.appendChild(inner);
+        wrapper.appendChild(wm);
+    }
+
+    loadImage(src) {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => resolve(img);
+            img.onerror = reject;
+            img.src = src;
+        });
     }
 
     async renderThumbnail(page, pageNum, sidebarDiv, viewerArea, targetPageWrapper) {
