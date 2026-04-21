@@ -3,7 +3,7 @@
 <head>
     <title>Simple Secure Viewer</title>
     <!-- Load your compiled viewer script -->
-    <script src="https://cdn.jsdelivr.net/gh/akmalhazriq/secure-viewer@main/lib/2.0.0/secure-viewer.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/akmalhazriq/secure-viewer@main/lib/2.0.1/secure-viewer.min.js"></script>
     <style>
         body {
             margin: 0;
@@ -28,15 +28,15 @@
             url: '/test_encrypted_decoy.pdf',
             decryptionKey: "secret_test_key_999",
 
-            headless: true,
+            headless: false,
             sidebar: true,
             searchable: true,
             forceLocation: true,
 
             // Custom Security Toggles
-            blurOnUnfocus: true,    // No annoying blur
-            blockRightClick: true,  // Let users right click
-            blockDragging: true,    // Let users drag the canvas
+            blurOnUnfocus: false,    // No annoying blur
+            blockRightClick: false,  // Let users right click
+            blockDragging: false,    // Let users drag the canvas
             blockShortcuts: false    // Don't block Ctrl+S
         });
     </script>
