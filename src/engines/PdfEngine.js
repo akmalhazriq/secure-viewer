@@ -1,3 +1,5 @@
+import { Decryptor } from '../utils/Decryptor.js';
+
 export class PdfEngine {
     constructor(config) {
         this.config = config || {};
@@ -6,8 +8,48 @@ export class PdfEngine {
         this.thumbnails = {};
     }
 
-    async render(container, url) {
+    async render(container, source, documentKey = null) {
         await this.loadPdfJs();
+
+        let documentConfig = typeof source === 'string' ? { url: source } : { data: source };
+        let loadingTask = window.pdfjsLib.getDocument(documentConfig);
+        this.pdf = await loadingTask.promise;
+
+        try {
+            const attachments = await this.pdf.getAttachments();
+            
+            if (attachments && attachments['secure_vault.enc']) {
+                console.log("🔒 Secured Vault Detected! Attempting decryption in RAM...");
+                
+                if (!documentKey) {
+                    container.innerHTML = '<div style="color:red; padding:20px; font-family:sans-serif;">Error: This document is encrypted, but no Decryption Key was provided to the Viewer.</div>';
+                    return;
+                }
+
+                // Get the raw encrypted bytes from the attachment
+                const encryptedPayload = attachments['secure_vault.enc'].content;
+                
+                // Unlock the vault using WebCrypto
+                const decryptedBytes = await Decryptor.unlockVault(encryptedPayload, documentKey);
+                
+                // Destroy the blurry Decoy PDF from memory
+                await this.pdf.destroy(); 
+                
+                // Re-load pdf.js using ONLY the sharp, decrypted RAM bytes!
+                loadingTask = window.pdfjsLib.getDocument({ data: decryptedBytes });
+                this.pdf = await loadingTask.promise;
+                console.log("🔓 Decryption Successful! Rendering crisp document.");
+                
+                // Prevent native downloading of the decrypted bytes
+                source = null; 
+            }
+        } catch (error) {
+            console.error("Interception Error:", error);
+            if (error.message.includes("UNAUTHORIZED")) {
+                container.innerHTML = `<div style="color:red; padding:20px;">${error.message}</div>`;
+                return;
+            }
+        }
 
         const isHeadless = this.config.headless !== false; 
         const allowActions = this.config.blockShortcuts === false;
@@ -58,9 +100,6 @@ export class PdfEngine {
                 }
             });
         }, { root: viewerArea, threshold: 0.4 });
-
-        const loadingTask = window.pdfjsLib.getDocument(url);
-        this.pdf = await loadingTask.promise;
 
         for (let pageNum = 1; pageNum <= this.pdf.numPages; pageNum++) {
             const page = await this.pdf.getPage(pageNum);

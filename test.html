@@ -3,7 +3,7 @@
 <head>
     <title>Simple Secure Viewer</title>
     <!-- Load your compiled viewer script -->
-    <script src="https://cdn.jsdelivr.net/gh/akmalhazriq/secure-viewer@main/lib/1.3.10/secure-viewer.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/akmalhazriq/secure-viewer@main/lib/2.0.0/secure-viewer.min.js"></script>
     <style>
         body {
             margin: 0;
@@ -25,12 +25,13 @@
         new SecureViewer({
             selector: '#secure-image',
             type: 'pdf', 
-            url: 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf',
+            url: '/test_encrypted_decoy.pdf',
+            decryptionKey: "secret_test_key_999",
 
             headless: true,
             sidebar: true,
             searchable: true,
-            forceLocation: false,
+            forceLocation: true,
 
             // Custom Security Toggles
             blurOnUnfocus: true,    // No annoying blur

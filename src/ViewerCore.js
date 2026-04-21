@@ -6,7 +6,11 @@ export class ViewerCore {
     constructor(config) {
         this.config = config; 
         this.container = document.querySelector(config.selector);
+        
         this.url = config.url;
+        this.documentData = config.documentData; 
+        this.decryptionKey = config.decryptionKey;
+
         this.type = config.type || 'pdf'; 
         this.forceLocation = config.forceLocation === true;
         
@@ -143,9 +147,17 @@ export class ViewerCore {
 
     async loadContent() {
         try {
+            const source = this.documentData || this.url;
+
+            if (!source) {
+                this.renderError('Configuration Error: No URL or Document Data was provided.');
+                return;
+            }
+
             const engine = this.type === 'pdf' ? new PdfEngine(this.config) : new ImageEngine(this.config);
             this.container.innerHTML = ''; 
-            await engine.render(this.container, this.url);
+            
+            await engine.render(this.container, source, this.decryptionKey);
         } catch (error) {
             this.renderError('Failed to load asset.');
         }
