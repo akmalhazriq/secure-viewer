@@ -56,7 +56,9 @@ export class ViewerCore {
             blurOnUnfocus: this.config.blurOnUnfocus,
             blockRightClick: this.config.blockRightClick,
             blockDragging: this.config.blockDragging,
-            blockShortcuts: this.config.blockShortcuts
+            blockShortcuts: this.config.blockShortcuts,
+            blockScreenshots: this.config.blockScreenshots,
+            screenShield: this.config.screenShield
         });
 
         this.loadContent();
@@ -88,7 +90,7 @@ export class ViewerCore {
                     }
                 );
             });
-        } catch (error) {
+        } catch (error) {   
             this.renderError('Location permission is required to view this content.');
             return false;
         }
