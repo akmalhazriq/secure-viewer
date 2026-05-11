@@ -95,7 +95,7 @@ export class SecurityManager {
                 backgroundImage: `url('${svgBg}')`, // Add the tiled text watermark
                 backgroundRepeat: 'repeat',
                 // Default state: Hide everything before the mouse enters
-                webkitMaskImage: 'radial-gradient(circle 0px at 50% 50%, transparent 100%, black 100%)',
+                WebkitMaskImage: 'radial-gradient(circle 0px at 50% 50%, transparent 100%, black 100%)',
                 maskImage: 'radial-gradient(circle 0px at 50% 50%, transparent 100%, black 100%)'
             });
 
@@ -112,14 +112,14 @@ export class SecurityManager {
 
                 // transparent = hole (see PDF), black = mask (see curtain)
                 const maskStr = `radial-gradient(circle ${holeRadius}px at ${x}px ${y}px, transparent 50%, black 100%)`;
-                curtain.style.webkitMaskImage = maskStr;
+                curtain.style.WebkitMaskImage = maskStr;
                 curtain.style.maskImage = maskStr;
             });
 
             // When the mouse leaves the document entirely, close the hole completely
             this.container.addEventListener('mouseleave', () => {
                 const maskStr = 'radial-gradient(circle 0px at 50% 50%, transparent 100%, black 100%)';
-                curtain.style.webkitMaskImage = maskStr;
+                curtain.style.WebkitMaskImage = maskStr;
                 curtain.style.maskImage = maskStr;
             });
         }

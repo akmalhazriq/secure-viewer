@@ -52,15 +52,6 @@ export class ViewerCore {
             return;
         }
 
-        new SecurityManager(this.container, {
-            blurOnUnfocus: this.config.blurOnUnfocus,
-            blockRightClick: this.config.blockRightClick,
-            blockDragging: this.config.blockDragging,
-            blockShortcuts: this.config.blockShortcuts,
-            blockScreenshots: this.config.blockScreenshots,
-            screenShield: this.config.screenShield
-        });
-
         this.loadContent();
     }
 
@@ -160,6 +151,15 @@ export class ViewerCore {
             this.container.innerHTML = ''; 
             
             await engine.render(this.container, source, this.decryptionKey);
+
+            new SecurityManager(this.container, {
+                blurOnUnfocus: this.config.blurOnUnfocus,
+                blockRightClick: this.config.blockRightClick,
+                blockDragging: this.config.blockDragging,
+                blockShortcuts: this.config.blockShortcuts,
+                blockScreenshots: this.config.blockScreenshots,
+                screenShield: this.config.screenShield
+            });
         } catch (error) {
             this.renderError('Failed to load asset.');
         }
